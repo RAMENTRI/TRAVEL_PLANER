@@ -3,192 +3,714 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Intelligent travel planner that generates day-by-day itineraries, budgets, packing lists, and trip summaries for destinations worldwide."
-    />
-    <title>Waywise | Intelligent Travel Planner</title>
-    <link rel="preconnect" href="https://images.unsplash.com" />
-    <link rel="stylesheet" href="/src/styles.css" />
+    <title>Travel Planner — AI Itinerary Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/MotionPathPlugin.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      .budget-card input:checked + .budget-label {
+        border-color: #6366f1;
+        background: #eef2ff;
+      }
+
+      .type-chip input:checked + .type-label {
+        border-color: #6366f1;
+        background: #eef2ff;
+        color: #3730a3;
+      }
+
+      #apiKeyPanel {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 320ms ease, opacity 240ms ease;
+      }
+
+      #apiKeyPanel.open {
+        max-height: 220px;
+        opacity: 1;
+      }
+
+      #gearBtn svg {
+        transition: transform 240ms ease;
+      }
+
+      #gearBtn.active svg {
+        transform: rotate(60deg);
+      }
+
+      #flightSvg {
+        overflow: visible;
+      }
+
+      #plane {
+        transform-box: fill-box;
+        transform-origin: 50% 50%;
+      }
+
+      .summary-card {
+        background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+        border: 1px solid #bae6fd;
+        border-radius: 1rem;
+        color: #0369a1;
+        font-size: 0.925rem;
+        line-height: 1.65;
+        padding: 1rem;
+      }
+
+      .day-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+      }
+
+      .day-header {
+        align-items: center;
+        background: linear-gradient(135deg, #6366f1, #818cf8);
+        color: #ffffff;
+        display: flex;
+        gap: 0.75rem;
+        padding: 1rem;
+      }
+
+      .day-badge {
+        background: rgba(255, 255, 255, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 0.3rem 0.58rem;
+        white-space: nowrap;
+      }
+
+      .day-title {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .time-slot {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1rem;
+      }
+
+      .time-slot:last-child {
+        border-bottom: 0;
+      }
+
+      .slot-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.65rem;
+        text-transform: uppercase;
+      }
+
+      .slot-label.morning {
+        color: #f59e0b;
+      }
+
+      .slot-label.afternoon {
+        color: #3b82f6;
+      }
+
+      .slot-label.evening {
+        color: #8b5cf6;
+      }
+
+      .slot-items {
+        color: #334155;
+        display: grid;
+        font-size: 0.925rem;
+        gap: 0.45rem;
+        line-height: 1.55;
+        list-style: disc;
+        padding-left: 1.2rem;
+      }
+
+      .tips-card {
+        background: #fefce8;
+        border: 1px solid #fef08a;
+        border-radius: 1rem;
+        padding: 1rem;
+      }
+
+      .tips-label {
+        color: #92400e;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.65rem;
+        text-transform: uppercase;
+      }
+
+      .tips-list {
+        color: #713f12;
+        display: grid;
+        font-size: 0.925rem;
+        gap: 0.45rem;
+      }
+    </style>
   </head>
-  <body>
-    <div id="app">
-      <header class="topbar" aria-label="Primary navigation">
-        <a class="brand" href="#planner" aria-label="Waywise planner home">
-          <span class="brand-mark">W</span>
-          <span>Waywise</span>
-        </a>
-        <nav class="nav-links" aria-label="Sections">
-          <a href="#planner">Planner</a>
-          <a href="#itinerary">Itinerary</a>
-          <a href="#budget">Budget</a>
-          <a href="#packing">Packing</a>
-        </nav>
-        <button class="icon-button theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">
-          <span aria-hidden="true">◐</span>
+  <body class="bg-slate-50 font-sans text-slate-900">
+    <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div class="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-4">
+        <div class="flex items-center gap-3">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-2xl">✈️</div>
+          <div>
+            <h1 class="text-base font-bold leading-tight text-slate-950">Travel Planner</h1>
+            <p class="text-xs font-medium text-slate-500">AI-powered itinerary generator</p>
+          </div>
+        </div>
+        <button
+          id="gearBtn"
+          type="button"
+          class="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition hover:border-indigo-200 hover:text-indigo-700"
+          aria-label="Open API key settings"
+        >
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" stroke="currentColor" stroke-width="1.8" />
+            <path
+              d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.4-2.4 1a8.1 8.1 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.6A8.1 8.1 0 0 0 7 6.6l-2.4-1-2 3.4 2 1.5c-.1.5-.1 1-.1 1.5s0 1 .1 1.5l-2 1.5 2 3.4 2.4-1a8.1 8.1 0 0 0 2.6 1.5l.4 2.6h4l.4-2.6a8.1 8.1 0 0 0 2.6-1.5l2.4 1 2-3.4-2-1.5Z"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+          </svg>
         </button>
-      </header>
+      </div>
+      <div id="apiKeyPanel" class="border-t border-slate-100 bg-white">
+        <div class="mx-auto max-w-2xl px-4 py-4">
+          <label for="apiKeyInput" class="mb-2 block text-sm font-semibold text-slate-700">Gemini API Key</label>
+          <div class="flex gap-2">
+            <input
+              id="apiKeyInput"
+              type="password"
+              class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+              autocomplete="off"
+            />
+            <button id="saveKeyBtn" type="button" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700">Save</button>
+          </div>
+          <p id="apiStatus" class="mt-2 text-sm font-medium text-green-700">Key pre-configured ✓ — ready to use</p>
+        </div>
+      </div>
+    </header>
 
-      <main>
-        <section class="hero" aria-labelledby="hero-title">
-          <img
-            class="hero-image"
-            src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=82"
-            alt="Mountain valley and travel road at sunrise"
-          />
-          <div class="hero-overlay"></div>
-          <div class="hero-content">
-            <p class="eyebrow">Plan every route, stay, meal, and moment</p>
-            <h1 id="hero-title">Waywise</h1>
-            <p class="hero-copy">
-              Build a realistic trip plan for any destination with smart pacing, daily routes, budget estimates,
-              local-style activities, and a packing list that adapts to your travel style.
-            </p>
-            <div class="hero-actions">
-              <a class="button primary" href="#planner">Start planning</a>
-              <button class="button ghost" type="button" id="load-demo">Try a sample trip</button>
+    <main class="mx-auto max-w-2xl px-4 py-8">
+      <div id="errorBanner" class="mb-5 hidden rounded-xl border border-red-200 bg-red-50 p-4">
+        <div class="flex items-start gap-3">
+          <svg class="mt-0.5 h-5 w-5 flex-none text-red-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+            <path d="M12 7v6M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <p id="errorText" class="min-w-0 flex-1 text-sm font-medium text-red-800"></p>
+          <button id="dismissError" type="button" class="text-red-500 transition hover:text-red-700" aria-label="Dismiss error">×</button>
+        </div>
+      </div>
+
+      <section id="formCard" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="mb-6">
+          <h2 class="text-xl font-bold text-slate-950">Plan Your Trip</h2>
+          <p class="mt-1 text-sm text-slate-500">Fill in the details to get a personalised day-by-day itinerary</p>
+        </div>
+
+        <form id="tripForm" novalidate class="space-y-5">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="destination" class="mb-1.5 block text-sm font-semibold text-slate-700">Destination *</label>
+              <input id="destination" name="destination" type="text" placeholder="e.g. Munnar, Paris" class="field-input w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" />
+              <p class="field-error mt-1 hidden text-xs font-medium text-red-600" data-error-for="destination">Destination is required</p>
+            </div>
+            <div>
+              <label for="startingCity" class="mb-1.5 block text-sm font-semibold text-slate-700">Starting City *</label>
+              <input id="startingCity" name="startingCity" type="text" placeholder="e.g. Kochi, Delhi" class="field-input w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" />
+              <p class="field-error mt-1 hidden text-xs font-medium text-red-600" data-error-for="startingCity">Starting city is required</p>
             </div>
           </div>
-        </section>
 
-        <section class="planner-band" id="planner" aria-labelledby="planner-title">
-          <div class="section-heading">
-            <p class="eyebrow">Trip builder</p>
-            <h2 id="planner-title">Tell Waywise what kind of journey you want.</h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="days" class="mb-1.5 block text-sm font-semibold text-slate-700">Number of Days *</label>
+              <input id="days" name="days" type="number" min="1" max="30" placeholder="5" class="field-input w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" />
+              <p class="field-error mt-1 hidden text-xs font-medium text-red-600" data-error-for="days">Enter a number between 1–30</p>
+            </div>
+            <div>
+              <label for="members" class="mb-1.5 block text-sm font-semibold text-slate-700">Group Size *</label>
+              <input id="members" name="members" type="number" min="1" max="20" placeholder="2" class="field-input w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" />
+              <p class="field-error mt-1 hidden text-xs font-medium text-red-600" data-error-for="members">Enter a number between 1–20</p>
+            </div>
           </div>
 
-          <form class="planner-grid" id="planner-form">
-            <div class="field span-2">
-              <label for="destination">Destination</label>
-              <input id="destination" name="destination" type="text" placeholder="Tokyo, Japan" required />
-            </div>
-
-            <div class="field">
-              <label for="start-date">Start date</label>
-              <input id="start-date" name="startDate" type="date" required />
-            </div>
-
-            <div class="field">
-              <label for="days">Days</label>
-              <input id="days" name="days" type="number" min="1" max="30" value="5" required />
-            </div>
-
-            <div class="field">
-              <label for="travelers">Travelers</label>
-              <input id="travelers" name="travelers" type="number" min="1" max="20" value="2" required />
-            </div>
-
-            <div class="field">
-              <label for="budget">Budget level</label>
-              <select id="budget" name="budget">
-                <option value="lean">Lean</option>
-                <option value="balanced" selected>Balanced</option>
-                <option value="premium">Premium</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label for="pace">Pace</label>
-              <select id="pace" name="pace">
-                <option value="easy">Easy</option>
-                <option value="steady" selected>Steady</option>
-                <option value="packed">Packed</option>
-              </select>
-            </div>
-
-            <fieldset class="interest-panel span-2">
-              <legend>Interests</legend>
-              <label><input type="checkbox" name="interests" value="food" checked /> Food</label>
-              <label><input type="checkbox" name="interests" value="culture" checked /> Culture</label>
-              <label><input type="checkbox" name="interests" value="nature" /> Nature</label>
-              <label><input type="checkbox" name="interests" value="shopping" /> Shopping</label>
-              <label><input type="checkbox" name="interests" value="nightlife" /> Nightlife</label>
-              <label><input type="checkbox" name="interests" value="family" /> Family</label>
-            </fieldset>
-
-            <div class="field span-2">
-              <label for="notes">Notes</label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows="4"
-                placeholder="Vegetarian food, museums, avoid very early mornings, include hidden gems..."
-              ></textarea>
-            </div>
-
-            <button class="button primary span-2" type="submit">Generate intelligent plan</button>
-          </form>
-        </section>
-
-        <section class="results-layout" aria-live="polite">
-          <aside class="trip-summary" aria-label="Trip summary">
-            <div class="summary-media">
-              <img id="destination-image" alt="Generated destination preview" />
-            </div>
-            <div class="summary-body">
-              <p class="eyebrow">Current plan</p>
-              <h2 id="summary-title">No trip generated yet</h2>
-              <p id="summary-copy">Use the planner to create a detailed itinerary.</p>
-              <div class="stat-grid">
-                <div>
-                  <span id="stat-days">0</span>
-                  <small>days</small>
+          <fieldset>
+            <legend class="mb-2 text-sm font-semibold text-slate-700">Budget Level *</legend>
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+              <label class="budget-card cursor-pointer">
+                <input class="sr-only" type="radio" name="budget" value="Low" />
+                <div class="budget-label h-full rounded-xl border border-slate-200 bg-white p-3 transition">
+                  <p class="font-bold text-slate-900">Low</p>
+                  <p class="mt-1 text-xs text-slate-500">Budget stays & street food</p>
+                  <p class="mt-2 text-xs font-semibold text-slate-600">~₹1,000–2,000 / day</p>
                 </div>
-                <div>
-                  <span id="stat-cost">$0</span>
-                  <small>est. total</small>
+              </label>
+              <label class="budget-card cursor-pointer">
+                <input class="sr-only" type="radio" name="budget" value="Medium" />
+                <div class="budget-label h-full rounded-xl border border-slate-200 bg-white p-3 transition">
+                  <p class="font-bold text-slate-900">Medium</p>
+                  <p class="mt-1 text-xs text-slate-500">Mid-range hotels & restaurants</p>
+                  <p class="mt-2 text-xs font-semibold text-slate-600">~₹3,000–6,000 / day</p>
                 </div>
-                <div>
-                  <span id="stat-style">-</span>
-                  <small>style</small>
+              </label>
+              <label class="budget-card cursor-pointer">
+                <input class="sr-only" type="radio" name="budget" value="High" />
+                <div class="budget-label h-full rounded-xl border border-slate-200 bg-white p-3 transition">
+                  <p class="font-bold text-slate-900">High</p>
+                  <p class="mt-1 text-xs text-slate-500">Premium stays & curated experiences</p>
+                  <p class="mt-2 text-xs font-semibold text-slate-600">~₹8,000+ / day</p>
                 </div>
-              </div>
-              <div class="summary-actions">
-                <button class="icon-button" type="button" id="save-plan" aria-label="Save plan" title="Save plan">💾</button>
-                <button class="icon-button" type="button" id="download-plan" aria-label="Download plan" title="Download JSON">⬇</button>
-                <button class="icon-button" type="button" id="print-plan" aria-label="Print plan" title="Print plan">⎙</button>
-              </div>
+              </label>
             </div>
-          </aside>
+            <p id="budgetError" class="mt-1 hidden text-xs font-medium text-red-600">Please select a budget level</p>
+          </fieldset>
 
-          <div class="result-stack">
-            <section class="panel" id="itinerary" aria-labelledby="itinerary-title">
-              <div class="panel-title">
-                <div>
-                  <p class="eyebrow">Smart itinerary</p>
-                  <h2 id="itinerary-title">Day-by-day route</h2>
-                </div>
-                <button class="button small" type="button" id="optimize-plan">Rebalance pace</button>
-              </div>
-              <div class="timeline" id="timeline">
-                <div class="empty-state">Your itinerary will appear here.</div>
-              </div>
-            </section>
+          <fieldset>
+            <legend class="mb-2 text-sm font-semibold text-slate-700">Trip Type <span class="font-normal text-slate-400">(optional)</span></legend>
+            <div class="flex flex-wrap gap-2">
+              <label class="type-chip cursor-pointer">
+                <input class="sr-only" type="radio" name="tripType" value="Adventure" />
+                <div class="type-label rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition">🧗 Adventure</div>
+              </label>
+              <label class="type-chip cursor-pointer">
+                <input class="sr-only" type="radio" name="tripType" value="Cultural" />
+                <div class="type-label rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition">🏛 Cultural</div>
+              </label>
+              <label class="type-chip cursor-pointer">
+                <input class="sr-only" type="radio" name="tripType" value="Relaxation" />
+                <div class="type-label rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition">🏖 Relaxation</div>
+              </label>
+              <label class="type-chip cursor-pointer">
+                <input class="sr-only" type="radio" name="tripType" value="Family" />
+                <div class="type-label rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition">👨‍👩‍👧 Family</div>
+              </label>
+              <label class="type-chip cursor-pointer">
+                <input class="sr-only" type="radio" name="tripType" value="Honeymoon" />
+                <div class="type-label rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition">💑 Honeymoon</div>
+              </label>
+            </div>
+          </fieldset>
 
-            <section class="panel" id="budget" aria-labelledby="budget-title">
-              <div class="panel-title">
-                <div>
-                  <p class="eyebrow">Budget brain</p>
-                  <h2 id="budget-title">Estimated spend</h2>
-                </div>
-              </div>
-              <div class="budget-grid" id="budget-grid"></div>
-            </section>
+          <button type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100">
+            Plan My Trip →
+          </button>
+        </form>
+      </section>
 
-            <section class="panel" id="packing" aria-labelledby="packing-title">
-              <div class="panel-title">
-                <div>
-                  <p class="eyebrow">Ready list</p>
-                  <h2 id="packing-title">Packing and preparation</h2>
-                </div>
-              </div>
-              <div class="packing-grid" id="packing-grid"></div>
-            </section>
-          </div>
-        </section>
-      </main>
-    </div>
+      <section id="loadingCard" class="hidden rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <svg id="flightSvg" class="mx-auto h-36 w-full max-w-sm" viewBox="0 0 320 110" aria-hidden="true">
+          <path id="flightPath" d="M 24 88 C 90 75, 200 18, 300 12" fill="none" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="6 4" />
+          <g class="cloud" opacity="0">
+            <ellipse cx="238" cy="25" rx="16" ry="9" fill="#f1f5f9" />
+            <ellipse cx="254" cy="20" rx="18" ry="11" fill="#f1f5f9" />
+            <ellipse cx="272" cy="26" rx="15" ry="8" fill="#f1f5f9" />
+            <ellipse cx="255" cy="31" rx="35" ry="8" fill="#f1f5f9" />
+          </g>
+          <g class="cloud" opacity="0">
+            <ellipse cx="78" cy="55" rx="15" ry="8" fill="#f1f5f9" />
+            <ellipse cx="94" cy="49" rx="18" ry="11" fill="#f1f5f9" />
+            <ellipse cx="112" cy="55" rx="15" ry="8" fill="#f1f5f9" />
+            <ellipse cx="95" cy="60" rx="34" ry="8" fill="#f1f5f9" />
+          </g>
+          <g id="plane" opacity="0">
+            <path d="M 11 0 L 23 5 L 11 10 Z" fill="#4f46e5" />
+            <ellipse cx="8" cy="5" rx="13" ry="3.5" fill="#6366f1" />
+            <path d="M 2 4 L -10 -7 L 8 3 Z" fill="#818cf8" />
+            <path d="M 2 6 L -10 17 L 8 7 Z" fill="#818cf8" />
+            <path d="M -5 3 L -15 -4 L -8 5 Z" fill="#a5b4fc" />
+            <path d="M -5 7 L -15 14 L -8 5 Z" fill="#a5b4fc" />
+            <circle cx="11" cy="4.4" r="1.7" fill="rgba(255,255,255,0.55)" />
+          </g>
+        </svg>
+        <p id="loadingMessage" class="mt-2 text-base font-bold text-slate-900">Booking your adventure…</p>
+        <p class="mt-1 text-sm font-medium text-slate-500">Crafting your perfect itinerary</p>
+      </section>
 
-    <script type="module" src="/src/app.js"></script>
+      <section id="outputSection" class="mt-6 hidden">
+        <div class="mb-4 flex flex-wrap gap-2">
+          <button id="copyBtn" type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-indigo-200 hover:text-indigo-700">Copy Itinerary</button>
+          <button id="anotherBtn" type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-indigo-200 hover:text-indigo-700">Plan Another Trip</button>
+        </div>
+        <div id="outputCards" class="space-y-4"></div>
+      </section>
+    </main>
+
+    <script>
+      const HARDCODED_GEMINI_API_KEY = "";
+      let apiKey = HARDCODED_GEMINI_API_KEY;
+      let latestItinerary = null;
+      let loadingInterval = null;
+
+      const messages = [
+        "Booking your adventure…",
+        "Checking flight routes…",
+        "Scouting the best spots…",
+        "Packing the essentials…",
+        "Mapping out your days…"
+      ];
+
+      const form = document.getElementById("tripForm");
+      const formCard = document.getElementById("formCard");
+      const loadingCard = document.getElementById("loadingCard");
+      const outputSection = document.getElementById("outputSection");
+      const outputCards = document.getElementById("outputCards");
+      const errorBanner = document.getElementById("errorBanner");
+      const errorText = document.getElementById("errorText");
+      const apiKeyPanel = document.getElementById("apiKeyPanel");
+      const apiKeyInput = document.getElementById("apiKeyInput");
+      const apiStatus = document.getElementById("apiStatus");
+      const gearBtn = document.getElementById("gearBtn");
+      const saveKeyBtn = document.getElementById("saveKeyBtn");
+      const loadingMessage = document.getElementById("loadingMessage");
+      const copyBtn = document.getElementById("copyBtn");
+
+      function hasApiKey() {
+        return Boolean(apiKey && apiKey.trim());
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"]/g, (char) => {
+          const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
+          return map[char];
+        });
+      }
+
+      function toggleApiPanel(forceOpen) {
+        const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !apiKeyPanel.classList.contains("open");
+        apiKeyPanel.classList.toggle("open", shouldOpen);
+        gearBtn.classList.toggle("active", shouldOpen);
+      }
+
+      function maskKey(key) {
+        return key.length <= 4 ? "••••" : `••••••••${key.slice(-4)}`;
+      }
+
+      function saveApiKey() {
+        const value = apiKeyInput.value.trim();
+        if (!value) {
+          apiStatus.textContent = "Paste a Gemini API key to continue.";
+          apiStatus.className = "mt-2 text-sm font-medium text-red-700";
+          return;
+        }
+        apiKey = value;
+        apiStatus.textContent = `Saved ${maskKey(value)} ✓`;
+        apiStatus.className = "mt-2 text-sm font-medium text-green-700";
+        setTimeout(() => toggleApiPanel(false), 1200);
+      }
+
+      function showError(message) {
+        errorText.textContent = message;
+        errorBanner.classList.remove("hidden");
+      }
+
+      function hideError() {
+        errorBanner.classList.add("hidden");
+      }
+
+      function markField(input, invalid) {
+        input.classList.toggle("border-red-400", invalid);
+        input.classList.toggle("bg-red-50", invalid);
+        const error = document.querySelector(`[data-error-for="${input.name}"]`);
+        if (error) error.classList.toggle("hidden", !invalid);
+      }
+
+      function validateForm() {
+        let valid = true;
+        const destination = document.getElementById("destination");
+        const startingCity = document.getElementById("startingCity");
+        const days = document.getElementById("days");
+        const members = document.getElementById("members");
+        const budget = document.querySelector('input[name="budget"]:checked');
+
+        const checks = [
+          [destination, destination.value.trim().length > 0],
+          [startingCity, startingCity.value.trim().length > 0],
+          [days, Number(days.value) >= 1 && Number(days.value) <= 30],
+          [members, Number(members.value) >= 1 && Number(members.value) <= 20]
+        ];
+
+        checks.forEach(([input, ok]) => {
+          markField(input, !ok);
+          if (!ok) valid = false;
+        });
+
+        document.getElementById("budgetError").classList.toggle("hidden", Boolean(budget));
+        if (!budget) valid = false;
+
+        return valid;
+      }
+
+      function getFormData() {
+        const data = new FormData(form);
+        return {
+          destination: data.get("destination").trim(),
+          startingCity: data.get("startingCity").trim(),
+          days: Number(data.get("days")),
+          members: Number(data.get("members")),
+          budget: data.get("budget"),
+          tripType: data.get("tripType") || ""
+        };
+      }
+
+      function buildPrompt(data) {
+        const typeLine = data.tripType ? `- Trip Type: ${data.tripType}\n` : "";
+        return `You are a travel planning expert. Create a day-by-day trip itinerary.
+
+Trip details:
+- Destination: ${data.destination}
+- Starting City: ${data.startingCity}
+- Number of Days: ${data.days}
+- Group Size: ${data.members} people
+- Budget Level: ${data.budget} (Low = budget stays & street food ~₹1,000–2,000/day; Medium = mid-range hotels ~₹3,000–6,000/day; High = premium experiences ~₹8,000+/day)
+${typeLine}
+OUTPUT FORMAT — follow this EXACTLY. Return only valid JSON, no markdown, no explanation outside JSON:
+
+{
+"summary": "2-sentence trip overview",
+"days": [
+{
+"day": 1,
+"title": "Short catchy day title",
+"morning": ["point 1", "point 2", "point 3"],
+"afternoon": ["point 1", "point 2", "point 3"],
+"evening": ["point 1", "point 2"]
+}
+],
+"tips": ["tip 1", "tip 2", "tip 3"]
+}
+
+Rules:
+- Each point must be ONE short sentence max (under 12 words)
+- No long paragraphs anywhere
+- 2–3 points per time slot, never more than 4
+- Tips: exactly 3, each under 10 words
+- ${data.days} day objects total in the "days" array`;
+      }
+
+      async function callGemini(data) {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(apiKey)}`;
+        let response;
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: buildPrompt(data) }] }],
+              generationConfig: { responseMimeType: "application/json" }
+            })
+          });
+        } catch (error) {
+          throw { type: "network", message: "Something went wrong. Please check your connection." };
+        }
+
+        if (!response.ok) {
+          if (response.status === 400) throw { type: "bad_request", message: "Request failed. Please try again." };
+          if (response.status === 401 || response.status === 403) throw { type: "api_key", message: "Invalid API key. Please check your Gemini API key in settings." };
+          if (response.status === 429) throw { type: "rate_limit", message: "Too many requests. Wait a moment and try again." };
+          throw { type: "network", message: "Something went wrong. Please check your connection." };
+        }
+
+        const payload = await response.json();
+        const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw { type: "empty", message: "No itinerary generated. Try rephrasing your destination." };
+
+        try {
+          return JSON.parse(stripJsonFence(text));
+        } catch (error) {
+          throw { type: "parse", message: "Received an unexpected response format. Please try again." };
+        }
+      }
+
+      function stripJsonFence(text) {
+        return text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
+      }
+
+      function showLoading() {
+        hideError();
+        formCard.classList.add("hidden");
+        outputSection.classList.add("hidden");
+        loadingCard.classList.remove("hidden");
+        gsap.registerPlugin(MotionPathPlugin);
+        gsap.set("#plane", { opacity: 0, clearProps: "x,y,rotation" });
+        gsap.set(".cloud", { opacity: 0, y: 0 });
+        gsap.to(".cloud", { opacity: 1, duration: 0.45, stagger: 0.12 });
+        gsap.to(".cloud", { y: -5, duration: 1.6, repeat: -1, yoyo: true, ease: "sine.inOut", stagger: 0.2 });
+        gsap.timeline({ repeat: -1, repeatDelay: 0.4 })
+          .set("#plane", { opacity: 0 })
+          .to("#plane", { opacity: 1, duration: 0.35 })
+          .to("#plane", {
+            duration: 2.8,
+            ease: "power1.inOut",
+            motionPath: {
+              path: "#flightPath",
+              autoRotate: true,
+              alignOrigin: [0.5, 0.5],
+              start: 0,
+              end: 1
+            }
+          }, "<")
+          .to("#plane", { opacity: 0, duration: 0.3 }, "-=0.3");
+
+        let index = 0;
+        loadingMessage.textContent = messages[index];
+        loadingInterval = setInterval(() => {
+          index = (index + 1) % messages.length;
+          loadingMessage.textContent = messages[index];
+        }, 2000);
+      }
+
+      function hideLoading() {
+        loadingCard.classList.add("hidden");
+        clearInterval(loadingInterval);
+        gsap.killTweensOf(["#plane", ".cloud"]);
+        gsap.set(["#plane", ".cloud"], { clearProps: "all" });
+      }
+
+      function renderOutput(data) {
+        latestItinerary = data;
+        const parts = [];
+        parts.push(`<div class="summary-card">✈️ ${escapeHtml(data.summary || "")}</div>`);
+        (data.days || []).forEach((day) => {
+          const slots = [
+            ["morning", "🌅 Morning", day.morning],
+            ["afternoon", "☀️ Afternoon", day.afternoon],
+            ["evening", "🌙 Evening", day.evening]
+          ].filter((slot) => Array.isArray(slot[2]) && slot[2].length);
+
+          parts.push(`
+            <article class="day-card">
+              <div class="day-header">
+                <span class="day-badge">DAY ${escapeHtml(day.day || "")}</span>
+                <h3 class="day-title">${escapeHtml(day.title || "")}</h3>
+              </div>
+              <div>
+                ${slots.map(([key, label, items]) => `
+                  <section class="time-slot">
+                    <p class="slot-label ${key}">${escapeHtml(label)}</p>
+                    <ul class="slot-items">${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+                  </section>
+                `).join("")}
+              </div>
+            </article>
+          `);
+        });
+
+        if (Array.isArray(data.tips) && data.tips.length) {
+          parts.push(`
+            <article class="tips-card">
+              <p class="tips-label">Local Tips</p>
+              <ul class="tips-list">${data.tips.map((tip) => `<li>💡 ${escapeHtml(tip)}</li>`).join("")}</ul>
+            </article>
+          `);
+        }
+
+        outputCards.innerHTML = parts.join("");
+        outputSection.classList.remove("hidden");
+        setTimeout(() => outputSection.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+      }
+
+      function itineraryToText(data) {
+        const lines = [data.summary || "", ""];
+        (data.days || []).forEach((day) => {
+          lines.push(`Day ${day.day}: ${day.title}`);
+          ["morning", "afternoon", "evening"].forEach((slot) => {
+            if (Array.isArray(day[slot]) && day[slot].length) {
+              lines.push(`  ${slot.charAt(0).toUpperCase() + slot.slice(1)}:`);
+              day[slot].forEach((item) => lines.push(`    - ${item}`));
+            }
+          });
+          lines.push("");
+        });
+        lines.push("Tips:");
+        (data.tips || []).forEach((tip) => lines.push(`  - ${tip}`));
+        return lines.join("\n");
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        hideError();
+        if (!validateForm()) return;
+        if (!hasApiKey()) {
+          toggleApiPanel(true);
+          showError("Add your Gemini API key in settings before planning.");
+          return;
+        }
+
+        showLoading();
+        try {
+          const itinerary = await callGemini(getFormData());
+          hideLoading();
+          renderOutput(itinerary);
+          formCard.classList.remove("hidden");
+        } catch (error) {
+          hideLoading();
+          formCard.classList.remove("hidden");
+          if (error.type === "api_key") toggleApiPanel(true);
+          showError(error.message || "Something went wrong. Please try again.");
+        }
+      });
+
+      document.querySelectorAll(".field-input").forEach((input) => {
+        input.addEventListener("input", () => markField(input, false));
+      });
+
+      document.querySelectorAll('input[name="budget"]').forEach((input) => {
+        input.addEventListener("change", () => document.getElementById("budgetError").classList.add("hidden"));
+      });
+
+      gearBtn.addEventListener("click", () => toggleApiPanel());
+      saveKeyBtn.addEventListener("click", saveApiKey);
+      apiKeyInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") saveApiKey();
+      });
+
+      document.getElementById("dismissError").addEventListener("click", hideError);
+
+      copyBtn.addEventListener("click", async () => {
+        if (!latestItinerary) return;
+        await navigator.clipboard.writeText(itineraryToText(latestItinerary));
+        const original = copyBtn.textContent;
+        copyBtn.textContent = "✓ Copied!";
+        copyBtn.classList.add("text-green-700", "border-green-200");
+        setTimeout(() => {
+          copyBtn.textContent = original;
+          copyBtn.classList.remove("text-green-700", "border-green-200");
+        }, 2000);
+      });
+
+      document.getElementById("anotherBtn").addEventListener("click", () => {
+        form.reset();
+        outputSection.classList.add("hidden");
+        outputCards.innerHTML = "";
+        latestItinerary = null;
+        hideError();
+        document.querySelectorAll(".field-input").forEach((input) => markField(input, false));
+        document.getElementById("budgetError").classList.add("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    </script>
   </body>
 </html>

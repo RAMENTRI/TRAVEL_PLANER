@@ -1,32 +1,24 @@
-# Waywise Intelligent Travel Planner
+# Travel Planner — AI Itinerary Generator
 
-Waywise is a deploy-ready travel planning web app. It generates keyless intelligent trip plans with day-by-day itinerary pacing, destination-aware budget estimates, packing suggestions, save/download/print actions, and a responsive interface.
+A single-file AI travel planner web app. Everything lives in `index.html`; there is no npm install and no build step.
 
-## Run locally
+## Use
+
+Open `index.html` in a browser, or deploy it as a static site.
+
+The app uses the Gemini REST API:
+
+`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`
+
+Add your Gemini API key in either place:
+
+- Paste it in the settings drawer at runtime.
+- Put it in the `HARDCODED_GEMINI_API_KEY` variable inside `index.html`.
+
+## Deploy
+
+For Firebase Hosting, this repo is configured to serve the project root:
 
 ```bash
-npm install
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-## Publish to Firebase Hosting
-
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting
-npm run build
 firebase deploy
 ```
-
-When Firebase asks for the public directory, use `dist`. Keep the single-page app rewrite enabled.
-
-## Notes
-
-The planner does not require API keys. Its intelligence is a browser-side rule engine, so it is cheap to host and safe to publish as a static site. If you later want live AI generation, weather, hotel, or flight data, add those through a backend function so private API keys are never exposed in the browser.
