@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Intelligent travel planner that generates day-by-day itineraries, budgets, packing lists, and trip summaries for destinations worldwide."
+    />
+    <title>Waywise | Intelligent Travel Planner</title>
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar" aria-label="Primary navigation">
+        <a class="brand" href="#planner" aria-label="Waywise planner home">
+          <span class="brand-mark">W</span>
+          <span>Waywise</span>
+        </a>
+        <nav class="nav-links" aria-label="Sections">
+          <a href="#planner">Planner</a>
+          <a href="#itinerary">Itinerary</a>
+          <a href="#budget">Budget</a>
+          <a href="#packing">Packing</a>
+        </nav>
+        <button class="icon-button theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">
+          <span aria-hidden="true">◐</span>
+        </button>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="hero-title">
+          <img
+            class="hero-image"
+            src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=82"
+            alt="Mountain valley and travel road at sunrise"
+          />
+          <div class="hero-overlay"></div>
+          <div class="hero-content">
+            <p class="eyebrow">Plan every route, stay, meal, and moment</p>
+            <h1 id="hero-title">Waywise</h1>
+            <p class="hero-copy">
+              Build a realistic trip plan for any destination with smart pacing, daily routes, budget estimates,
+              local-style activities, and a packing list that adapts to your travel style.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="#planner">Start planning</a>
+              <button class="button ghost" type="button" id="load-demo">Try a sample trip</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="planner-band" id="planner" aria-labelledby="planner-title">
+          <div class="section-heading">
+            <p class="eyebrow">Trip builder</p>
+            <h2 id="planner-title">Tell Waywise what kind of journey you want.</h2>
+          </div>
+
+          <form class="planner-grid" id="planner-form">
+            <div class="field span-2">
+              <label for="destination">Destination</label>
+              <input id="destination" name="destination" type="text" placeholder="Tokyo, Japan" required />
+            </div>
+
+            <div class="field">
+              <label for="start-date">Start date</label>
+              <input id="start-date" name="startDate" type="date" required />
+            </div>
+
+            <div class="field">
+              <label for="days">Days</label>
+              <input id="days" name="days" type="number" min="1" max="30" value="5" required />
+            </div>
+
+            <div class="field">
+              <label for="travelers">Travelers</label>
+              <input id="travelers" name="travelers" type="number" min="1" max="20" value="2" required />
+            </div>
+
+            <div class="field">
+              <label for="budget">Budget level</label>
+              <select id="budget" name="budget">
+                <option value="lean">Lean</option>
+                <option value="balanced" selected>Balanced</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="pace">Pace</label>
+              <select id="pace" name="pace">
+                <option value="easy">Easy</option>
+                <option value="steady" selected>Steady</option>
+                <option value="packed">Packed</option>
+              </select>
+            </div>
+
+            <fieldset class="interest-panel span-2">
+              <legend>Interests</legend>
+              <label><input type="checkbox" name="interests" value="food" checked /> Food</label>
+              <label><input type="checkbox" name="interests" value="culture" checked /> Culture</label>
+              <label><input type="checkbox" name="interests" value="nature" /> Nature</label>
+              <label><input type="checkbox" name="interests" value="shopping" /> Shopping</label>
+              <label><input type="checkbox" name="interests" value="nightlife" /> Nightlife</label>
+              <label><input type="checkbox" name="interests" value="family" /> Family</label>
+            </fieldset>
+
+            <div class="field span-2">
+              <label for="notes">Notes</label>
+              <textarea
+                id="notes"
+                name="notes"
+                rows="4"
+                placeholder="Vegetarian food, museums, avoid very early mornings, include hidden gems..."
+              ></textarea>
+            </div>
+
+            <button class="button primary span-2" type="submit">Generate intelligent plan</button>
+          </form>
+        </section>
+
+        <section class="results-layout" aria-live="polite">
+          <aside class="trip-summary" aria-label="Trip summary">
+            <div class="summary-media">
+              <img id="destination-image" alt="Generated destination preview" />
+            </div>
+            <div class="summary-body">
+              <p class="eyebrow">Current plan</p>
+              <h2 id="summary-title">No trip generated yet</h2>
+              <p id="summary-copy">Use the planner to create a detailed itinerary.</p>
+              <div class="stat-grid">
+                <div>
+                  <span id="stat-days">0</span>
+                  <small>days</small>
+                </div>
+                <div>
+                  <span id="stat-cost">$0</span>
+                  <small>est. total</small>
+                </div>
+                <div>
+                  <span id="stat-style">-</span>
+                  <small>style</small>
+                </div>
+              </div>
+              <div class="summary-actions">
+                <button class="icon-button" type="button" id="save-plan" aria-label="Save plan" title="Save plan">💾</button>
+                <button class="icon-button" type="button" id="download-plan" aria-label="Download plan" title="Download JSON">⬇</button>
+                <button class="icon-button" type="button" id="print-plan" aria-label="Print plan" title="Print plan">⎙</button>
+              </div>
+            </div>
+          </aside>
+
+          <div class="result-stack">
+            <section class="panel" id="itinerary" aria-labelledby="itinerary-title">
+              <div class="panel-title">
+                <div>
+                  <p class="eyebrow">Smart itinerary</p>
+                  <h2 id="itinerary-title">Day-by-day route</h2>
+                </div>
+                <button class="button small" type="button" id="optimize-plan">Rebalance pace</button>
+              </div>
+              <div class="timeline" id="timeline">
+                <div class="empty-state">Your itinerary will appear here.</div>
+              </div>
+            </section>
+
+            <section class="panel" id="budget" aria-labelledby="budget-title">
+              <div class="panel-title">
+                <div>
+                  <p class="eyebrow">Budget brain</p>
+                  <h2 id="budget-title">Estimated spend</h2>
+                </div>
+              </div>
+              <div class="budget-grid" id="budget-grid"></div>
+            </section>
+
+            <section class="panel" id="packing" aria-labelledby="packing-title">
+              <div class="panel-title">
+                <div>
+                  <p class="eyebrow">Ready list</p>
+                  <h2 id="packing-title">Packing and preparation</h2>
+                </div>
+              </div>
+              <div class="packing-grid" id="packing-grid"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>
